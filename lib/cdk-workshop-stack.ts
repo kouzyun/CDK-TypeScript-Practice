@@ -1,6 +1,7 @@
 import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as rds from 'aws-cdk-lib/aws-rds';
 
 import { readFileSync } from "fs";
 
@@ -38,5 +39,18 @@ export class CdkWorkshopStack extends Stack {
     new CfnOutput(this, "WordpressServer1PublicIPAddress", {
       value: `http://${webServer1.instancePublicIp}`,
     });
+
+    // DB
+    const dbServer = new rds.DatabaseInstance(this, "WordPressDB", {
+      vpc,
+      engine: rds.DatabaseInstanceEngine.mysql({ version: rds.MysqlEngineVersion.VER_8_0_36 }),
+      // RDS DB インスタンスのインスタンスタイプを設定
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
+      // RDS DB インスタンスのデータベース名を設定
+      databaseName: "wordpress",
+    });
+
+    // WebServer からのアクセスを許可
+    dbServer.connections.allowDefaultPortFrom(webServer1);
   }
 }
